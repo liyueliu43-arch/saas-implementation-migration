@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise SaaS Implementation & Data Migration Governance | Liyue Liu</title>
+  <meta name="description" content="Portfolio Project #2 by Liyue Liu: Full-lifecycle enterprise SaaS CRM migration with Python ETL pipeline, n8n API integration workflow, and professional consulting deliverables." />
+  <meta name="author" content="Liyue Liu" />
+  <meta name="keywords" content="SaaS Implementation, Data Migration, ETL, n8n, CRM, API Integration, Implementation Consultant" />
+  <meta property="og:title" content="Enterprise SaaS Implementation & Data Migration Governance" />
+  <meta property="og:description" content="Python ETL pipeline + n8n workflow + architecture blueprints + UAT runbooks. Real consulting deliverables by Liyue Liu." />
+  <meta property="og:url" content="https://liyueliu43-arch.github.io/saas-implementation-migration/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #0a0e1a;
+      --bg-card: #111827;
+      --bg-card-hover: #1a2238;
+      --accent-primary: #6366f1;
+      --accent-secondary: #8b5cf6;
+      --accent-teal: #14b8a6;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-green: #10b981;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: rgba(99, 102, 241, 0.2);
+      --gradient-hero: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+      --gradient-card: linear-gradient(145deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      background: rgba(10, 14, 26, 0.85);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      font-weight: 700;
+      font-size: 1rem;
+      background: var(--gradient-hero);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text-primary); }
+
+    /* ─── HERO ────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 2rem 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(99,102,241,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 100px;
+      padding: 0.35rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #a5b4fc;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      animation: fadeInDown 0.6s ease;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      animation: fadeInUp 0.7s ease;
+    }
+    .hero h1 .gradient-text {
+      background: var(--gradient-hero);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-subtitle {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 680px;
+      margin: 0 auto 2.5rem;
+      animation: fadeInUp 0.8s ease;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.9s ease;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--gradient-hero);
+      color: white;
+      padding: 0.75rem 1.75rem;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 24px rgba(99,102,241,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.4); }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: transparent;
+      color: var(--text-primary);
+      padding: 0.75rem 1.75rem;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-secondary:hover { background: var(--bg-card); border-color: rgba(99,102,241,0.5); }
+
+    /* ─── METRICS STRIP ─────────────────────────────────────── */
+    .metrics-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 0 0 5rem;
+    }
+    .metric-cell {
+      background: var(--bg-dark);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .metric-cell:hover { background: var(--bg-card); }
+    .metric-value {
+      font-size: 2.25rem;
+      font-weight: 800;
+      background: var(--gradient-hero);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .metric-label { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
+
+    /* ─── SECTION ────────────────────────────────────────────── */
+    section { max-width: 1200px; margin: 0 auto; padding: 0 2rem 6rem; }
+    .section-header { text-align: center; margin-bottom: 3rem; }
+    .section-tag {
+      display: inline-block;
+      background: rgba(99,102,241,0.1);
+      border: 1px solid rgba(99,102,241,0.25);
+      color: #a5b4fc;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.3rem 0.9rem;
+      border-radius: 100px;
+      margin-bottom: 1rem;
+    }
+    .section-header h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .section-header p { color: var(--text-secondary); max-width: 580px; margin: 0 auto; }
+
+    /* ─── CARDS GRID ─────────────────────────────────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+    .card {
+      background: var(--gradient-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--gradient-hero);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .card:hover { transform: translateY(-4px); border-color: rgba(99,102,241,0.4); box-shadow: 0 12px 48px rgba(99,102,241,0.12); }
+    .card:hover::before { opacity: 1; }
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+    }
+    .card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .card p { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.25rem; }
+    .card-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #a5b4fc;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: gap 0.2s;
+    }
+    .card-link:hover { gap: 0.6rem; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
+    .tag {
+      background: rgba(99,102,241,0.1);
+      border: 1px solid rgba(99,102,241,0.2);
+      color: #c7d2fe;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 0.2rem 0.6rem;
+      border-radius: 100px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    /* ─── PIPELINE VIZ ────────────────────────────────────────── */
+    .pipeline {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.5rem;
+      margin-bottom: 3rem;
+    }
+    .pipeline-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 2rem; }
+    .pipeline-nodes {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+    .pipeline-node {
+      flex-shrink: 0;
+      text-align: center;
+      padding: 1rem;
+      min-width: 130px;
+    }
+    .node-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin: 0 auto 0.75rem;
+      border: 2px solid;
+    }
+    .node-label { font-size: 0.75rem; font-weight: 600; color: var(--text-primary); }
+    .node-sub { font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .pipeline-arrow {
+      flex-shrink: 0;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      padding: 0 0.25rem;
+    }
+    .node-webhook .node-icon { background: rgba(99,102,241,0.15); border-color: #6366f1; }
+    .node-validate .node-icon { background: rgba(245,158,11,0.12); border-color: #f59e0b; }
+    .node-format .node-icon { background: rgba(16,185,129,0.12); border-color: #10b981; }
+    .node-push .node-icon { background: rgba(139,92,246,0.12); border-color: #8b5cf6; }
+    .node-slack .node-icon { background: rgba(20,184,166,0.12); border-color: #14b8a6; }
+    .node-error .node-icon { background: rgba(244,63,94,0.12); border-color: #f43f5e; }
+
+    /* ─── ABOUT ───────────────────────────────────────────────── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+    @media (max-width: 700px) { .about-grid { grid-template-columns: 1fr; } }
+    .about-text h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; }
+    .about-text p { color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.8; }
+    .skill-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .skill-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+    .skill-list li::before { content: '→'; color: #6366f1; font-weight: 700; }
+    .about-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .stat-box {
+      background: var(--gradient-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-box .num { font-size: 1.75rem; font-weight: 800; color: #a5b4fc; display: block; }
+    .stat-box .lbl { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* ─── FOOTER ─────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+    footer a { color: #a5b4fc; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ─── ANIMATIONS ─────────────────────────────────────────── */
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+      50% { box-shadow: 0 0 24px 4px rgba(99,102,241,0.25); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-brand">🚀 SaaS Migration Governance</div>
+    <ul class="nav-links">
+      <li><a href="#deliverables">Deliverables</a></li>
+      <li><a href="#pipeline">Pipeline</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="https://github.com/liyueliu43-arch/saas-implementation-migration" target="_blank">GitHub ↗</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div>
+      <div class="hero-badge">🏆 Portfolio Project #2 &nbsp;·&nbsp; Spring 2025 Job Search</div>
+      <h1>
+        Enterprise SaaS<br/>
+        <span class="gradient-text">Implementation &amp; Data Migration</span><br/>
+        Governance
+      </h1>
+      <p class="hero-subtitle">
+        A complete, production-grade consulting engagement simulation—from dirty legacy data
+        to automated API integration, with every deliverable a real implementation consultant produces.
+      </p>
+      <div class="hero-buttons">
+        <a id="btn-view-docs" href="https://github.com/liyueliu43-arch/saas-implementation-migration" class="btn-primary" target="_blank">
+          📂 View All Deliverables
+        </a>
+        <a id="btn-view-etl" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/etl_migration_validator.py" class="btn-secondary" target="_blank">
+          🐍 Run the ETL Pipeline
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics-strip">
+    <div class="metric-cell">
+      <span class="metric-value">3s</span>
+      <div class="metric-label">Data cleansing time<br/>(was 4+ hours)</div>
+    </div>
+    <div class="metric-cell">
+      <span class="metric-value">99%</span>
+      <div class="metric-label">Data accuracy rate<br/>(was ~58%)</div>
+    </div>
+    <div class="metric-cell">
+      <span class="metric-value">100%</span>
+      <div class="metric-label">API error interception<br/>rate (pre-flight)</div>
+    </div>
+    <div class="metric-cell">
+      <span class="metric-value">$0</span>
+      <div class="metric-label">Financial data loss<br/>(fully reconciled)</div>
+    </div>
+    <div class="metric-cell">
+      <span class="metric-value">234h</span>
+      <div class="metric-label">Annual hours saved<br/>(~4.5 hrs/week)</div>
+    </div>
+  </div>
+
+  <!-- DELIVERABLES -->
+  <section id="deliverables">
+    <div class="section-header">
+      <div class="section-tag">📦 Deliverables</div>
+      <h2>Everything a Real Implementation Produces</h2>
+      <p>9 production-ready files spanning data engineering, API integration, and consulting documentation.</p>
+    </div>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon" style="background:rgba(239,68,68,0.12);">🗃️</div>
+        <h3>Legacy Dirty Data Export</h3>
+        <p>30-row CSV simulating real on-premise CRM export with 6 embedded data quality issues: mixed country names, non-standard phone numbers, mixed date formats, currency-prefixed amounts, duplicate records, and invalid emails.</p>
+        <div class="tag-row"><span class="tag">CSV</span><span class="tag">Data Quality</span><span class="tag">6 Error Types</span></div>
+        <br/><a id="link-dirty-data" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/01_legacy_crm_dirty_data.csv" class="card-link" target="_blank">View file →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(16,185,129,0.12);">🐍</div>
+        <h3>Python ETL Migration Validator</h3>
+        <p>Automated pipeline: reads dirty CSV → normalises ISO country, E.164 phone, ISO 8601 dates, float amounts → deduplicates → quarantines invalid records → generates clean import file + professional audit report. Zero external dependencies.</p>
+        <div class="tag-row"><span class="tag">Python 3</span><span class="tag">ETL</span><span class="tag">stdlib only</span></div>
+        <br/><a id="link-etl" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/etl_migration_validator.py" class="card-link" target="_blank">View script →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(99,102,241,0.12);">✅</div>
+        <h3>Clean CRM Import File</h3>
+        <p>21 fully standardised records ready for direct import to the target cloud CRM. All fields validated: ISO country codes, E.164 phones, ISO 8601 dates, float USD amounts.</p>
+        <div class="tag-row"><span class="tag">CSV</span><span class="tag">21 Records</span><span class="tag">$803,000 ARR</span></div>
+        <br/><a id="link-clean" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/02_clean_target_crm_import.csv" class="card-link" target="_blank">View file →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(245,158,11,0.12);">⚠️</div>
+        <h3>Quarantine Error Records</h3>
+        <p>9 records rejected from migration with machine-readable quarantine reasons — covering duplicates, invalid emails, missing phone numbers, and format violations. Every rejection is traceable.</p>
+        <div class="tag-row"><span class="tag">CSV</span><span class="tag">9 Records</span><span class="tag">Traceable</span></div>
+        <br/><a id="link-quarantine" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/03_quarantined_error_records.csv" class="card-link" target="_blank">View file →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(20,184,166,0.12);">📄</div>
+        <h3>Data Migration Audit Report</h3>
+        <p>Auto-generated Markdown reconciliation report: pre/post record counts, financial total comparison ($803K clean vs $903.5K raw), quarantine breakdown by category, field-level transformation log, and migration readiness assessment.</p>
+        <div class="tag-row"><span class="tag">Markdown</span><span class="tag">Financial Audit</span><span class="tag">Auto-Generated</span></div>
+        <br/><a id="link-report" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/04_Data_Migration_Reconciliation_Report.md" class="card-link" target="_blank">Read report →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(139,92,246,0.12);">⚡</div>
+        <h3>n8n Order Sync Workflow</h3>
+        <p>6-node enterprise automation pipeline importable directly into n8n. Covers webhook ingestion → field validation (IF circuit breaker) → JSON payload formatting → CRM API push → Slack success notification → HTML error alert email.</p>
+        <div class="tag-row"><span class="tag">n8n</span><span class="tag">6 Nodes</span><span class="tag">Import-ready JSON</span></div>
+        <br/><a id="link-n8n" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/05_n8n_order_sync_workflow.json" class="card-link" target="_blank">View workflow →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(244,63,94,0.12);">🔌</div>
+        <h3>API Field Mapping Specification</h3>
+        <p>Full API contract document: source-to-target field mapping tables for Account, Contact, and Opportunity objects; OAuth 2.0 auth flow; complete request/response JSON for 201 success and all error codes (400/401/409/422/429).</p>
+        <div class="tag-row"><span class="tag">REST API</span><span class="tag">OAuth 2.0</span><span class="tag">JSON Schema</span></div>
+        <br/><a id="link-api" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/06_API_Field_Mapping_and_Payload_Spec.md" class="card-link" target="_blank">Read spec →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(16,185,129,0.12);">🏗️</div>
+        <h3>Solution Blueprint & Architecture</h3>
+        <p>As-Is pain map vs. To-Be automation pipeline (Mermaid diagrams), 4-week Gantt implementation roadmap, technology stack matrix, risk register, and quantified success criteria.</p>
+        <div class="tag-row"><span class="tag">Mermaid</span><span class="tag">Gantt</span><span class="tag">Architecture</span></div>
+        <br/><a id="link-blueprint" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/07_Solution_Blueprint_and_Architecture.md" class="card-link" target="_blank">View blueprint →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(99,102,241,0.12);">✔️</div>
+        <h3>UAT Checklist & Cutover Plan</h3>
+        <p>19 UAT test cases across 3 categories (functional, data accuracy, security), go/no-go criteria, 10-step cutover runbook, rollback procedure with cleanup SQL, and 48-hour hypercare plan.</p>
+        <div class="tag-row"><span class="tag">UAT</span><span class="tag">Go-Live</span><span class="tag">Rollback SQL</span></div>
+        <br/><a id="link-uat" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/08_UAT_Checklist_and_Cutover_Plan.md" class="card-link" target="_blank">View checklist →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(245,158,11,0.12);">🛠️</div>
+        <h3>Integration Troubleshooting Runbook</h3>
+        <p>Step-by-step diagnosis guides for 401 Unauthorized, 422 Unprocessable Entity, 429 Too Many Requests, and 504 Gateway Timeout — with root cause analysis, fix commands, and long-term prevention strategies.</p>
+        <div class="tag-row"><span class="tag">401</span><span class="tag">422</span><span class="tag">429</span><span class="tag">504</span></div>
+        <br/><a id="link-runbook" href="https://github.com/liyueliu43-arch/saas-implementation-migration/blob/main/09_Integration_Troubleshooting_Runbook.md" class="card-link" target="_blank">Read runbook →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PIPELINE VIZ -->
+  <section id="pipeline" style="padding-top:0;">
+    <div class="section-header">
+      <div class="section-tag">⚡ Automation Pipeline</div>
+      <h2>6-Node n8n Integration Workflow</h2>
+      <p>Real-time order synchronization from webhook to CRM with built-in circuit breaker.</p>
+    </div>
+    <div class="pipeline">
+      <div class="pipeline-title">Order Sync Pipeline — NexaCloud Global</div>
+      <div class="pipeline-nodes">
+        <div class="pipeline-node node-webhook">
+          <div class="node-icon">🔗</div>
+          <div class="node-label">Webhook</div>
+          <div class="node-sub">New Order Event</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node node-validate">
+          <div class="node-icon">🔍</div>
+          <div class="node-label">IF Validate</div>
+          <div class="node-sub">5 Business Rules</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node node-format">
+          <div class="node-icon">⚙️</div>
+          <div class="node-label">Format JSON</div>
+          <div class="node-sub">CRM Schema</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node node-push">
+          <div class="node-icon">🚀</div>
+          <div class="node-label">POST CRM API</div>
+          <div class="node-sub">HTTP 201 Created</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node node-slack">
+          <div class="node-icon">📣</div>
+          <div class="node-label">Slack Notify</div>
+          <div class="node-sub">#data-ops</div>
+        </div>
+      </div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:1rem;">
+        <div class="pipeline-arrow" style="color:var(--accent-rose);">↓ Error Path</div>
+        <div class="pipeline-node node-error" style="display:flex;align-items:center;gap:1rem;padding:0.5rem 1rem;min-width:auto;">
+          <div class="node-icon" style="width:40px;height:40px;margin:0;">🚨</div>
+          <div>
+            <div class="node-label">Circuit Breaker + Alert Email</div>
+            <div class="node-sub">HTTP 422 | Structured error log | HTML email to ops lead</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="about-grid">
+      <div class="about-text">
+        <div class="section-tag" style="display:inline-block;margin-bottom:1rem;">👤 About</div>
+        <h2>Liyue Liu</h2>
+        <p>
+          Implementation Consultant & Business Analyst candidate with hands-on experience
+          building data migration pipelines, API integration workflows, and enterprise
+          SaaS delivery documentation.
+        </p>
+        <p>
+          This project demonstrates real consulting craft: not just writing code, but
+          producing the full suite of artifacts that drive enterprise go-lives—from
+          dirty-data ETL to UAT sign-offs to production runbooks.
+        </p>
+        <ul class="skill-list">
+          <li>Python ETL engineering (stdlib only; production-ready)</li>
+          <li>n8n / Webhook / REST API integration</li>
+          <li>Data governance & financial reconciliation</li>
+          <li>SaaS implementation lifecycle (discovery → cutover)</li>
+          <li>Docs-as-Code (Markdown, GitHub Pages)</li>
+        </ul>
+        <br/>
+        <div class="hero-buttons" style="justify-content:flex-start;">
+          <a id="btn-github" href="https://github.com/liyueliu43-arch" class="btn-primary" target="_blank">🐙 GitHub Profile</a>
+        </div>
+      </div>
+      <div class="about-stats">
+        <div class="stat-box">
+          <span class="num">9</span>
+          <div class="lbl">Deliverable files</div>
+        </div>
+        <div class="stat-box">
+          <span class="num">6</span>
+          <div class="lbl">n8n workflow nodes</div>
+        </div>
+        <div class="stat-box">
+          <span class="num">19</span>
+          <div class="lbl">UAT test cases</div>
+        </div>
+        <div class="stat-box">
+          <span class="num">4</span>
+          <div class="lbl">Error runbooks</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>
+      Built by <a href="https://github.com/liyueliu43-arch" target="_blank">Liyue Liu (@liyueliu43-arch)</a> &nbsp;·&nbsp;
+      <a href="https://github.com/liyueliu43-arch/saas-implementation-migration" target="_blank">GitHub Repository</a> &nbsp;·&nbsp;
+      Portfolio Project #2 — Spring 2025
+    </p>
+  </footer>
+
+</body>
+</html>

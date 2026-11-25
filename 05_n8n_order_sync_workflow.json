@@ -1,0 +1,304 @@
+{
+  "name": "NexaCloud Order Sync — Enterprise CRM Integration Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nexacloud-order-sync",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "node-001-webhook",
+      "name": "🔗 Webhook: Receive New Order",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [100, 300],
+      "webhookId": "nexacloud-order-sync-prod-v1",
+      "notes": "Entry point. Receives new signed contract payloads from the sales portal or external partner systems via HTTP POST. Expected payload: { company_name, contact_email, country_iso, phone_e164, plan_tier, annual_contract_usd, signup_date, status }"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-email",
+              "leftValue": "={{ $json.body.contact_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            },
+            {
+              "id": "cond-company",
+              "leftValue": "={{ $json.body.company_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            },
+            {
+              "id": "cond-amount",
+              "leftValue": "={{ $json.body.annual_contract_usd }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "cond-country",
+              "leftValue": "={{ $json.body.country_iso }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            },
+            {
+              "id": "cond-email-format",
+              "leftValue": "={{ $json.body.contact_email }}",
+              "rightValue": "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-002-validation",
+      "name": "🔍 Validate: Required Fields & Business Rules",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [380, 300],
+      "notes": "Validates: (1) contact_email is non-empty and matches RFC-5322 pattern, (2) company_name non-empty, (3) annual_contract_usd > 0, (4) country_iso non-empty. TRUE branch = valid; FALSE branch = error/circuit-breaker."
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── FORMAT JSON PAYLOAD FOR TARGET CRM API ──────────────────────────\nconst body = $input.item.json.body;\n\n// Map incoming fields to Salesforce-compatible CRM schema\nconst payload = {\n  account: {\n    name: body.company_name,\n    billing_country: body.country_iso,\n    phone: body.phone_e164 || null,\n    type: 'Customer',\n    industry: 'Technology'\n  },\n  contact: {\n    email: body.contact_email,\n    phone: body.phone_e164 || null,\n    account_name: body.company_name\n  },\n  opportunity: {\n    name: `${body.company_name} — ${body.plan_tier} Plan`,\n    stage: 'Closed Won',\n    close_date: body.signup_date || new Date().toISOString().split('T')[0],\n    amount: parseFloat(body.annual_contract_usd),\n    plan_tier: body.plan_tier,\n    type: 'New Business',\n    lead_source: 'API Integration',\n    migration_batch: 'NEXACLOUD_2026_11'\n  },\n  metadata: {\n    source_system: 'Legacy CRM Migration',\n    submitted_at: new Date().toISOString(),\n    sync_version: '1.0.0'\n  }\n};\n\nreturn [{ json: { payload, original: body } }];\n"
+      },
+      "id": "node-003-formatter",
+      "name": "⚙️ Format: Build CRM API Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 180],
+      "notes": "Transforms validated webhook body into the target CRM API schema. Maps: company_name→account.name, country_iso→billing_country, phone_e164→phone, annual_contract_usd→opportunity.amount. Adds migration batch tag for post-migration SQL reconciliation."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.crm.nexacloud.io/v2/accounts/create-with-opportunity",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$env.NEXACLOUD_CRM_API_TOKEN}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Request-ID",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "X-Migration-Batch",
+              "value": "NEXACLOUD_2026_11"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {
+          "timeout": 15000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 3
+            }
+          }
+        }
+      },
+      "id": "node-004-crm-push",
+      "name": "🚀 Push: POST to Cloud CRM API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [940, 180],
+      "notes": "Sends formatted payload to the production CRM REST API endpoint. Uses Bearer token from environment variable (never hardcoded). Timeout: 15s. Includes idempotency via X-Request-ID = execution ID.",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C_DATA_OPS",
+          "mode": "id"
+        },
+        "text": "✅ *New Account Synced Successfully*\n\n*Company:* {{ $('⚙️ Format: Build CRM API Payload').item.json.payload.account.name }}\n*Plan:* {{ $('⚙️ Format: Build CRM API Payload').item.json.payload.opportunity.plan_tier }}\n*ARR:* ${{ $('⚙️ Format: Build CRM API Payload').item.json.payload.opportunity.amount.toLocaleString() }}\n*Country:* {{ $('⚙️ Format: Build CRM API Payload').item.json.payload.account.billing_country }}\n*CRM Record ID:* {{ $json.data.id || 'N/A' }}\n*Batch:* NEXACLOUD_2026_11\n*Timestamp:* {{ new Date().toISOString() }}",
+        "otherOptions": {
+          "mrkdwn": true
+        }
+      },
+      "id": "node-005-slack-success",
+      "name": "📣 Notify: Slack Success Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1220, 180],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-nexacloud-workspace",
+          "name": "NexaCloud Slack Workspace"
+        }
+      },
+      "notes": "Posts a success notification to #data-ops Slack channel with account name, plan tier, ARR, country, and newly created CRM record ID. Enables real-time ops visibility without manual dashboard checking."
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── CIRCUIT BREAKER: CAPTURE VALIDATION ERROR ────────────────────────\nconst body = $input.item.json.body || {};\nconst timestamp = new Date().toISOString();\n\n// Determine which validation rule(s) failed\nconst errors = [];\nconst emailRegex = /^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$/;\n\nif (!body.company_name) errors.push('MISSING_FIELD: company_name is required');\nif (!body.contact_email) errors.push('MISSING_FIELD: contact_email is required');\nelse if (!emailRegex.test(body.contact_email)) errors.push(`INVALID_FORMAT: contact_email '${body.contact_email}' fails RFC-5322 validation`);\nif (!body.annual_contract_usd || parseFloat(body.annual_contract_usd) <= 0) errors.push('BUSINESS_RULE: annual_contract_usd must be > 0');\nif (!body.country_iso) errors.push('MISSING_FIELD: country_iso is required');\n\nconst errorRecord = {\n  event_type: 'ORDER_SYNC_VALIDATION_FAILURE',\n  http_status_simulated: 422,\n  error_code: 'VALIDATION_FAILED',\n  timestamp: timestamp,\n  execution_id: $execution.id,\n  source_payload: body,\n  validation_errors: errors,\n  alert_recipient: 'ops-lead@nexacloud.io',\n  escalation_policy: 'P2 — Notify within 15 minutes'\n};\n\nconsole.error(`[CIRCUIT BREAKER] Validation failure at ${timestamp}:`, errors);\n\nreturn [{ json: errorRecord }];\n"
+      },
+      "id": "node-006-error-handler",
+      "name": "🚨 Circuit Breaker: Capture & Log Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 420],
+      "notes": "Activated when validation fails (FALSE branch of IF node). Identifies which field(s) failed, constructs a structured error record with HTTP 422 simulation, execution ID, and escalation policy. Writes to error log and triggers alert email."
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@nexacloud-ops.io",
+        "toEmail": "ops-lead@nexacloud.io",
+        "subject": "🚨 [ALERT] Order Sync Failure — {{ $json.error_code }} | Execution {{ $json.execution_id }}",
+        "emailType": "html",
+        "message": "<!DOCTYPE html>\n<html>\n<head><style>\nbody { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }\n.container { background: white; border-radius: 8px; padding: 24px; max-width: 600px; border-left: 4px solid #e53e3e; }\nh2 { color: #e53e3e; margin-top: 0; }\n.badge { background: #e53e3e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }\ntable { width: 100%; border-collapse: collapse; margin: 16px 0; }\nth, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; }\nth { background: #f9f9f9; font-weight: 600; }\n.error-item { background: #fff5f5; border-left: 3px solid #e53e3e; padding: 8px 12px; margin: 4px 0; font-family: monospace; font-size: 13px; }\n.footer { margin-top: 20px; font-size: 12px; color: #666; }\n</style></head>\n<body>\n<div class='container'>\n  <h2>⚠️ Order Sync Validation Failure <span class='badge'>HTTP 422</span></h2>\n  <table>\n    <tr><th>Event Type</th><td>{{ $json.event_type }}</td></tr>\n    <tr><th>Error Code</th><td>{{ $json.error_code }}</td></tr>\n    <tr><th>Execution ID</th><td>{{ $json.execution_id }}</td></tr>\n    <tr><th>Timestamp</th><td>{{ $json.timestamp }}</td></tr>\n    <tr><th>Escalation</th><td>{{ $json.escalation_policy }}</td></tr>\n  </table>\n  <h3>Validation Errors Detected:</h3>\n  {{#each $json.validation_errors}}\n  <div class='error-item'>❌ {{ this }}</div>\n  {{/each}}\n  <h3>Source Payload (Raw):</h3>\n  <pre style='background:#f4f4f4;padding:12px;border-radius:4px;overflow:auto;font-size:12px;'>{{ JSON.stringify($json.source_payload, null, 2) }}</pre>\n  <p><strong>Action Required:</strong> Please inspect the source system and correct the payload before retrying. Do NOT manually insert records into the CRM without ETL validation.</p>\n  <div class='footer'>This alert was generated automatically by the NexaCloud Order Sync Pipeline v1.0.0 | n8n workflow: nexacloud-order-sync</div>\n</div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "node-007-alert-email",
+      "name": "📧 Alert: Send Error Email to Ops Lead",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [940, 420],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-nexacloud-alerts",
+          "name": "NexaCloud SMTP Alerts"
+        }
+      },
+      "notes": "Sends a rich HTML alert email to the ops lead with: HTTP 422 status badge, all validation error details in a structured table, the raw source payload (for debugging), and escalation policy (P2: 15-minute SLA). Prevents manual CRM data corruption."
+    }
+  ],
+  "connections": {
+    "🔗 Webhook: Receive New Order": {
+      "main": [
+        [
+          {
+            "node": "🔍 Validate: Required Fields & Business Rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Validate: Required Fields & Business Rules": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Format: Build CRM API Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🚨 Circuit Breaker: Capture & Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Format: Build CRM API Payload": {
+      "main": [
+        [
+          {
+            "node": "🚀 Push: POST to Cloud CRM API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🚀 Push: POST to Cloud CRM API": {
+      "main": [
+        [
+          {
+            "node": "📣 Notify: Slack Success Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🚨 Circuit Breaker: Capture & Log Error": {
+      "main": [
+        [
+          {
+            "node": "📧 Alert: Send Error Email to Ops Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "nexacloud-global-error-handler",
+    "timezone": "Asia/Shanghai"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "tag-crm-integration",
+      "name": "CRM Integration"
+    },
+    {
+      "id": "tag-data-migration",
+      "name": "Data Migration"
+    },
+    {
+      "id": "tag-nexacloud",
+      "name": "NexaCloud Global"
+    },
+    {
+      "id": "tag-production",
+      "name": "Production"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2026-11-25T06:16:00.000Z",
+  "id": "nexacloud-order-sync-v1",
+  "meta": {
+    "instanceId": "nexacloud-n8n-prod-001",
+    "templateCredsSetupCompleted": true,
+    "description": "Enterprise 6-node order synchronization pipeline. Handles webhook ingestion, field validation with IF circuit breaker, JSON payload formatting, CRM API push, Slack success notification, and HTML error alert email. Part of NexaCloud Global SaaS Implementation project."
+  },
+  "versionId": "1.0.0"
+}

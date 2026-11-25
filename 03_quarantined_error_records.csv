@@ -1,0 +1,30 @@
+Legacy_ID,Company_Name,Contact_Email,Country,Phone_Raw,Plan_Tier,Annual_Contract_USD,Signup_Date,Status,_quarantine_reason
+L006,Apex Logistics GmbH,m.schneider@apexlogistics.de,Germany,+49-89-123456,Enterprise,$48,000,2024/01/15,Duplicate of Legacy_ID L001
+L015,TechNova Solutions,invalid-email@,US,+1-800-555-0199,Starter,$3,600,2024/04/22,Duplicate of Legacy_ID L004
+L021,BlueSky Retail Inc,j.carter@bluesky.com,USA,415-888-2301,Professional,$12,000,15-02-2024,Duplicate of Legacy_ID L002
+L030,DataStream Inc,,USA,+1 (650) 555-0177,Professional,$22,000,2024/09/01,Duplicate of Legacy_ID L012
+L001,Apex Logistics GmbH,m.schneider@apexlogistics.de,Germany,+49-89-123456,Enterprise,$48,000,2024/01/15,Unparseable date format: '000'
+L002,BlueSky Retail Inc,j.carter@bluesky.com,USA,415-888-2301,Professional,$12,000,15-02-2024,Unparseable date format: '000'
+L003,Meridian Health Partners,r.patel@meridianhealth.co.uk,United Kingdom,+44 20 7946 0845,Enterprise,$95,000,March 10 2024,Unparseable date format: '000'
+L004,TechNova Solutions,invalid-email@,US,+1-800-555-0199,Starter,$3,600,2024/04/22,Unparseable date format: '600' | Invalid email format: 'invalid-email@'
+L005,GlobalTrade AG,h.fischer@globaltrade.ch,DE,0041-44-5556677,Professional,€24,000,05-05-2024,Unparseable date format: '000'
+L007,Sunrise Media Ltd,k.tanaka@sunrisemedia.jp,Japan,81-3-1234-5678,Starter,$7,200,June 1 2024,Unparseable date format: '200'
+L009,EuroFinance Partners,anna.m@eurofinance.eu,Germany,+49(30)88779900,Enterprise,$ 120,000,30-07-2024,Unparseable date format: '000'
+L010,CloudBridge Systems,c.wright@cloudbridge.com,uk,+44-121-496-0100,Professional,$ 18,500,2024/08/14,Unparseable date format: '500'
+L011,Pinnacle Dynamics,p.lee@pinnacle.sg,Singapore,+65 6213 3388,Enterprise,$62,000,Aug 20 2024,Unparseable date format: '000'
+L012,DataStream Inc,,USA,+1 (650) 555-0177,Professional,$22,000,2024/09/01,Unparseable date format: '000' | Missing email address
+L013,RedRock Mining Co,t.okonkwo@redrock.com.ng,Nigeria,234-1-4615000,Starter,$4,800,10-09-2024,Unparseable date format: '800'
+L014,Vantage Pharma SA,l.martin@vantagepharma.fr,France,+33-1-4455-6677,Enterprise,$85,000,2024/10/03,Unparseable date format: '000'
+L016,MegaStore Retail,info@megaretail.com,United States,(212) 555-8800,Professional,$28,000,October 15 2024,Unparseable date format: '000'
+L017,Sakura Digital KK,y.yamamoto@sakuradigital.co.jp,japan,+81 3 5678 9012,Starter,$9,600,2024/11/01,Unparseable date format: '600'
+L018,Arctic Energy AS,e.berg@arcticenergy.no,Norway,+47 22 33 44 55,Professional,$31,000,20-11-2024,Unparseable date format: '000'
+L019,SunTech Arabia,f.al-rashid@suntechksa.com,Saudi Arabia,,Enterprise,$110,000,2024/12/05,Unparseable date format: '000' | Missing phone number
+L020,PacificHub Logistics,m.chen@pacifichub.hk,Hong Kong,+852-2345-6789,Enterprise,$75,000,Dec 10 2024,Unparseable date format: '000'
+L022,Iberia Systems SL,r.garcia@iberiasys.es,Spain,+34 91 234 5678,Professional,$19,500,2025/01/08,Unparseable date format: '500'
+L023,GlobalTech Nigeria,o.adeyemi@globaltech.ng,NG,+234 802 345 6789,Starter,$5,400,15-01-2025,Unparseable date format: '400'
+L024,MedCore GmbH,s.hoffmann@medcore.de,Germany,+49-711-9876543,Enterprise,$98,000,2025/02/01,Unparseable date format: '000'
+L025,Zephyr Analytics,z.patel@zephyranalytics.com,UK,+44 161 496 1234,Professional,$33,000,Feb 14 2025,Unparseable date format: '000'
+L026,NexaCloud Test,test-user@,us,0015555559999,Starter,FREE,2025/03/01,Trial,Invalid email format: 'test-user@'
+L027,SkyBridge Consulting,a.reinholt@skybridge.dk,Denmark,+45 33 11 22 33,Professional,$27,500,20-03-2025,Unparseable date format: '500'
+L028,OmegaWave Tech,c.kim@omegawave.kr,South Korea,+82-2-3456-7890,Enterprise,$67,000,2025/04/02,Unparseable date format: '000'
+L029,ClearPath Financial,w.brown@clearpath.ca,Canada,+1 416 555 7890,Professional,$41,000,April 15 2025,Unparseable date format: '000'
